@@ -2,115 +2,241 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="画像の屋根部分をブラウザ内だけで縦方向に伸ばせる、無料の軽量画像編集ツールです。">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="画像の一部分を伸縮、反復、鏡面化、移動し、余白も生成できる無料のローカル画像再構成ツールです。">
   <meta name="referrer" content="no-referrer">
   <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#1769aa">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'none'; font-src 'self'; object-src 'none'; media-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>Roof Stretch Editor</title>
+  <title>Pixel Reframe Lab</title>
   <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
+  <script src="core.js" defer></script>
+  <script src="render.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
-  <a class="skip-link" href="#main-content">操作画面へ移動</a>
+  <a class="skip-link" href="#workspace">編集画面へ移動</a>
 
   <header class="site-header">
     <div class="header-inner">
-      <p class="site-name">Roof Stretch Editor</p>
-      <p class="site-tagline">画像は端末の外へ送信されません</p>
+      <div>
+        <p class="site-name">Pixel Reframe Lab</p>
+        <p class="site-subtitle">局所変形と余白生成に特化した画像再構成ツール</p>
+      </div>
+      <p class="privacy-badge">画像は端末内だけで処理</p>
     </div>
   </header>
 
-  <main id="main-content" class="page-shell">
+  <main id="workspace" class="page-shell">
     <section class="hero" aria-labelledby="page-title">
-      <p class="eyebrow">無料で使えるブラウザ画像編集</p>
-      <h1 id="page-title">屋根部分を自然に縦へ伸ばす</h1>
+      <p class="eyebrow">無料、登録不要、外部送信なし</p>
+      <h1 id="page-title">画像の一部だけを組み替える</h1>
       <p class="hero-copy">
-        画像を選び、伸ばしたい屋根の範囲と伸ばす量を指定してください。処理はすべてブラウザ内で完結します。
+        縦横の帯を伸ばす、縮める、削る、反復する、鏡面化する、ずらす。さらに四辺へ余白を生成し、画像全体の比率を作り直せます。
       </p>
     </section>
 
     <noscript>
-      <div class="notice notice-error">
-        このツールにはJavaScriptが必要です。ブラウザの設定でJavaScriptを有効にしてください。
-      </div>
+      <div class="notice notice-error">このツールにはJavaScriptが必要です。</div>
     </noscript>
 
-    <section class="editor-layout" aria-label="画像編集画面">
+    <section class="workspace-grid" aria-label="画像編集ワークスペース">
       <aside class="panel controls-panel" aria-labelledby="controls-title">
-        <h2 id="controls-title">編集設定</h2>
-
-        <div class="control-group">
-          <label class="file-label" for="image-input">画像を選ぶ</label>
-          <input
-            id="image-input"
-            class="file-input"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-          >
-          <p class="help-text">JPEG、PNG、WebP。最大12MB、最大1600万画素です。</p>
+        <div class="panel-heading">
+          <div>
+            <h2 id="controls-title">編集設定</h2>
+            <p id="device-profile" class="small-text">端末設定を確認中です</p>
+          </div>
         </div>
 
-        <div id="status" class="status" role="status" aria-live="polite">
-          画像を選ぶと編集を始められます。
-        </div>
-
-        <fieldset id="range-controls" class="control-fieldset" disabled>
-          <legend>伸ばす範囲</legend>
-
-          <div class="range-control">
-            <div class="label-row">
-              <label for="range-start">範囲の上端</label>
-              <output id="range-start-output" for="range-start">0%</output>
-            </div>
-            <input id="range-start" type="range" min="0" max="95" step="1" value="0">
+        <section class="upload-section" aria-labelledby="upload-title">
+          <h3 id="upload-title">1. 画像を読み込む</h3>
+          <div id="drop-zone" class="drop-zone">
+            <label class="file-label" for="image-input">画像を選ぶ</label>
+            <input id="image-input" class="file-input" type="file" accept="image/jpeg,image/png,image/webp">
+            <p>ここへドロップ、または画像をコピーして貼り付けできます。</p>
+            <p class="small-text">JPEG、PNG、WebP。最大18MB、最大2000万画素。</p>
           </div>
+        </section>
 
-          <div class="range-control">
-            <div class="label-row">
-              <label for="range-end">範囲の下端</label>
-              <output id="range-end-output" for="range-end">40%</output>
-            </div>
-            <input id="range-end" type="range" min="5" max="100" step="1" value="40">
-          </div>
+        <div id="status" class="status" role="status" aria-live="polite">画像を選ぶと編集を始められます。</div>
 
-          <div class="range-control">
-            <div class="label-row">
-              <label for="stretch-amount">伸ばす量</label>
-              <output id="stretch-output" for="stretch-amount">40%</output>
-            </div>
-            <input id="stretch-amount" type="range" min="0" max="150" step="1" value="40">
-            <p class="help-text">選択範囲の高さに対する追加量です。</p>
-          </div>
-        </fieldset>
-
-        <fieldset id="view-controls" class="control-fieldset view-options" disabled>
-          <legend>プレビュー</legend>
-          <label>
-            <input type="radio" name="preview-mode" value="selection" checked>
-            範囲を確認
-          </label>
-          <label>
-            <input type="radio" name="preview-mode" value="result">
-            仕上がりを確認
-          </label>
-        </fieldset>
-
-        <fieldset id="download-controls" class="control-fieldset" disabled>
-          <legend>保存設定</legend>
-          <label for="output-format">保存形式</label>
-          <select id="output-format">
-            <option value="image/png">PNG</option>
-            <option value="image/jpeg">JPEG</option>
-            <option value="image/webp">WebP</option>
-          </select>
-        </fieldset>
-
-        <div class="button-row">
-          <button id="reset-button" class="button button-secondary" type="button" disabled>設定を戻す</button>
+        <div class="history-row" aria-label="編集履歴">
+          <button id="undo-button" class="button button-secondary" type="button" disabled>元に戻す</button>
+          <button id="redo-button" class="button button-secondary" type="button" disabled>やり直す</button>
+          <button id="reset-button" class="button button-secondary" type="button" disabled>初期化</button>
           <button id="clear-button" class="button button-secondary" type="button" disabled>画像を外す</button>
-          <button id="download-button" class="button button-primary" type="button" disabled>画像を保存</button>
         </div>
+
+        <fieldset id="preset-controls" class="control-fieldset" disabled>
+          <legend>2. 目的から選ぶ</legend>
+          <div class="preset-grid">
+            <button class="preset-button" type="button" data-preset="headroom">上に余白</button>
+            <button class="preset-button" type="button" data-preset="side-space">左右に余白</button>
+            <button class="preset-button" type="button" data-preset="remove-strip">帯を削る</button>
+            <button class="preset-button" type="button" data-preset="mirror-texture">鏡面パターン</button>
+            <button class="preset-button" type="button" data-preset="compress-center">中央を圧縮</button>
+            <button class="preset-button" type="button" data-preset="glitch-shift">帯をずらす</button>
+          </div>
+        </fieldset>
+
+        <details open>
+          <summary>3. 帯を変形</summary>
+          <fieldset id="slice-controls" class="control-fieldset" disabled>
+            <legend class="visually-hidden">帯の変形設定</legend>
+
+            <div class="segmented-control" aria-label="変形方向">
+              <label><input type="radio" name="axis" value="vertical" checked>横帯を編集</label>
+              <label><input type="radio" name="axis" value="horizontal">縦帯を編集</label>
+            </div>
+
+            <label for="operation-mode">変形方法</label>
+            <select id="operation-mode">
+              <option value="stretch">伸ばす</option>
+              <option value="compress">縮める</option>
+              <option value="repeat">繰り返す</option>
+              <option value="mirror">鏡面反復</option>
+              <option value="smear">1列を引き伸ばす</option>
+              <option value="remove">帯を削除</option>
+              <option value="offset">帯を横または縦へずらす</option>
+            </select>
+
+            <div class="range-control">
+              <div class="label-row">
+                <label for="range-start">範囲の始点</label>
+                <output id="range-start-output" for="range-start">30%</output>
+              </div>
+              <input id="range-start" type="range" min="0" max="98" step="1" value="30">
+            </div>
+
+            <div class="range-control">
+              <div class="label-row">
+                <label for="range-end">範囲の終点</label>
+                <output id="range-end-output" for="range-end">55%</output>
+              </div>
+              <input id="range-end" type="range" min="2" max="100" step="1" value="55">
+            </div>
+
+            <div class="range-control">
+              <div class="label-row">
+                <label id="amount-label" for="amount-percent">変形量</label>
+                <output id="amount-output" for="amount-percent">50%</output>
+              </div>
+              <input id="amount-percent" type="range" min="0" max="300" step="1" value="50">
+              <p id="amount-help" class="small-text">選択した帯の長さに対する追加量です。</p>
+            </div>
+
+            <div class="range-control">
+              <div class="label-row">
+                <label for="feather-percent">境界をなじませる</label>
+                <output id="feather-output" for="feather-percent">1%</output>
+              </div>
+              <input id="feather-percent" type="range" min="0" max="8" step="0.5" value="1">
+            </div>
+          </fieldset>
+        </details>
+
+        <details>
+          <summary>4. 余白を生成</summary>
+          <fieldset id="padding-controls" class="control-fieldset" disabled>
+            <legend class="visually-hidden">余白生成設定</legend>
+
+            <div class="range-control">
+              <div class="label-row"><label for="padding-top">上</label><output id="padding-top-output">0%</output></div>
+              <input id="padding-top" type="range" min="0" max="100" step="1" value="0">
+            </div>
+            <div class="range-control">
+              <div class="label-row"><label for="padding-right">右</label><output id="padding-right-output">0%</output></div>
+              <input id="padding-right" type="range" min="0" max="100" step="1" value="0">
+            </div>
+            <div class="range-control">
+              <div class="label-row"><label for="padding-bottom">下</label><output id="padding-bottom-output">0%</output></div>
+              <input id="padding-bottom" type="range" min="0" max="100" step="1" value="0">
+            </div>
+            <div class="range-control">
+              <div class="label-row"><label for="padding-left">左</label><output id="padding-left-output">0%</output></div>
+              <input id="padding-left" type="range" min="0" max="100" step="1" value="0">
+            </div>
+
+            <label class="checkbox-row"><input id="link-padding" type="checkbox">4辺を同じ値で動かす</label>
+
+            <label for="padding-mode">余白の作り方</label>
+            <select id="padding-mode">
+              <option value="mirror">鏡面で延長</option>
+              <option value="repeat">画像を反復</option>
+              <option value="edge">端の色を引き延ばす</option>
+              <option value="solid">単色</option>
+              <option value="transparent">透明</option>
+            </select>
+
+            <div id="padding-color-row" class="color-row" hidden>
+              <label for="padding-color">余白色</label>
+              <input id="padding-color" type="color" value="#ffffff">
+            </div>
+          </fieldset>
+        </details>
+
+        <details>
+          <summary>5. 回転、反転、切り抜き</summary>
+          <fieldset id="geometry-controls" class="control-fieldset" disabled>
+            <legend class="visually-hidden">画像全体の変形</legend>
+            <div class="compact-grid">
+              <button id="rotate-left" class="button button-secondary" type="button">左へ90度</button>
+              <button id="rotate-right" class="button button-secondary" type="button">右へ90度</button>
+              <button id="flip-x" class="button button-secondary" type="button" aria-pressed="false">左右反転</button>
+              <button id="flip-y" class="button button-secondary" type="button" aria-pressed="false">上下反転</button>
+            </div>
+
+            <p class="small-text">切り抜きは各辺から削る割合です。</p>
+            <div class="compact-range-grid">
+              <label>上<input id="crop-top" type="range" min="0" max="45" step="1" value="0"><output id="crop-top-output">0%</output></label>
+              <label>右<input id="crop-right" type="range" min="0" max="45" step="1" value="0"><output id="crop-right-output">0%</output></label>
+              <label>下<input id="crop-bottom" type="range" min="0" max="45" step="1" value="0"><output id="crop-bottom-output">0%</output></label>
+              <label>左<input id="crop-left" type="range" min="0" max="45" step="1" value="0"><output id="crop-left-output">0%</output></label>
+            </div>
+          </fieldset>
+        </details>
+
+        <details>
+          <summary>6. 保存とレシピ</summary>
+          <fieldset id="output-controls" class="control-fieldset" disabled>
+            <legend class="visually-hidden">保存設定</legend>
+
+            <label for="output-format">保存形式</label>
+            <select id="output-format">
+              <option value="image/png">PNG</option>
+              <option value="image/jpeg">JPEG</option>
+              <option value="image/webp">WebP</option>
+            </select>
+
+            <div id="quality-row" class="range-control" hidden>
+              <div class="label-row"><label for="output-quality">画質</label><output id="quality-output">92%</output></div>
+              <input id="output-quality" type="range" min="50" max="100" step="1" value="92">
+            </div>
+
+            <label for="output-max-dimension">最大の縦横</label>
+            <select id="output-max-dimension">
+              <option value="1280">1280px</option>
+              <option value="2048">2048px</option>
+              <option value="3072">3072px</option>
+              <option value="4096" selected>4096px</option>
+              <option value="6000">6000px</option>
+              <option value="10000">原寸に近く保存</option>
+            </select>
+
+            <div class="save-grid">
+              <button id="download-button" class="button button-primary" type="button" disabled>画像を保存</button>
+              <button id="share-button" class="button button-secondary" type="button" hidden disabled>共有</button>
+            </div>
+
+            <div class="recipe-grid">
+              <button id="recipe-download" class="button button-secondary" type="button">設定を保存</button>
+              <label class="button button-secondary recipe-label" for="recipe-input">設定を読込</label>
+              <input id="recipe-input" class="visually-hidden" type="file" accept="application/json,.json">
+            </div>
+            <p class="small-text">レシピには画像を含めず、設定だけをJSONで保存します。</p>
+          </fieldset>
+        </details>
       </aside>
 
       <section class="panel preview-panel" aria-labelledby="preview-title">
@@ -119,41 +245,41 @@
             <h2 id="preview-title">プレビュー</h2>
             <p id="dimension-text" class="dimension-text">画像はまだ選ばれていません</p>
           </div>
-          <p id="mode-label" class="mode-label">範囲確認</p>
+          <div class="preview-actions">
+            <div class="segmented-control small" aria-label="プレビュー表示">
+              <label><input type="radio" name="preview-mode" value="result" checked>結果</label>
+              <label><input type="radio" name="preview-mode" value="selection">範囲</label>
+            </div>
+            <button id="compare-button" class="button button-secondary" type="button" disabled>押して元画像</button>
+          </div>
         </div>
 
-        <div id="canvas-shell" class="canvas-shell">
+        <div id="canvas-shell" class="canvas-shell" tabindex="0" aria-label="画像プレビュー。範囲表示では線をドラッグできます。">
           <p id="empty-preview" class="empty-preview">ここに画像が表示されます</p>
-          <canvas id="preview-canvas" hidden aria-label="画像編集のプレビュー">
-            お使いのブラウザはCanvasに対応していません。
-          </canvas>
+          <canvas id="preview-canvas" hidden>お使いのブラウザはCanvasに対応していません。</canvas>
         </div>
+        <p id="canvas-help" class="canvas-help">範囲表示に切り替えると、白い枠の辺を指やマウスで動かせます。</p>
 
-        <div class="privacy-note">
-          <h3>プライバシーと安全性</h3>
-          <p>
-            画像の読み込み、編集、保存は端末内で行います。外部API、解析サービス、広告サービスは使用していません。
-          </p>
+        <div class="feature-note">
+          <h3>このツールがしないこと</h3>
+          <p>テンプレート、文字組み、素材販売、クラウド保存は扱いません。画像の局所変形と比率再構成だけに絞り、軽さとやり直しやすさを優先します。</p>
         </div>
       </section>
     </section>
 
     <section class="panel guide-panel" aria-labelledby="guide-title">
-      <h2 id="guide-title">使い方</h2>
-      <ol>
-        <li>屋根が写っている画像を選びます。</li>
-        <li>上端と下端を動かし、伸ばしたい屋根部分を囲みます。</li>
-        <li>伸ばす量を調整し、仕上がりを確認します。</li>
-        <li>保存形式を選び、画像を保存します。</li>
-      </ol>
-      <p>
-        境界線が目立つ場合は、模様や色が急に変わらない範囲を選ぶと自然になりやすくなります。
-      </p>
+      <h2 id="guide-title">使い分け</h2>
+      <div class="guide-grid">
+        <article><h3>伸ばす、縮める、削る</h3><p>空、壁、床、布、背景などの帯を調整し、被写体を直接拡大せずに構図を変えます。</p></article>
+        <article><h3>反復、鏡面、1列引き伸ばし</h3><p>模様や背景を延長し、バナー、壁紙、余白素材を作ります。</p></article>
+        <article><h3>余白生成</h3><p>画像の四辺を個別に広げ、縦長、横長、正方形に近い比率へ組み直します。</p></article>
+        <article><h3>帯をずらす</h3><p>選択帯だけを横または縦へ循環移動し、グリッチや位置調整に使います。</p></article>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <p>Roof Stretch Editor</p>
+    <p>Pixel Reframe Lab。外部API、解析、広告、アカウント登録は使用しません。</p>
   </footer>
 </body>
 </html>
