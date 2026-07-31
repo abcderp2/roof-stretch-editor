@@ -98,3 +98,17 @@ test("selection preview renders overlay", () => {
   assert.equal(result.canvas.width, 400);
   assert.equal(result.canvas.height, 300);
 });
+
+test("large conceptual output is scaled to a safe export canvas", () => {
+  const largeSource = new FakeCanvas(5000, 4000);
+  const result = Render.renderResult(largeSource, 5000, 4000, {
+    axis: "vertical",
+    mode: "stretch",
+    startPercent: 0,
+    endPercent: 100,
+    amountPercent: 300,
+    outputMaxDimension: 1280
+  }, { maximumDimension: 1280, pixelLimit: 12_000_000 });
+  assert.ok(Math.max(result.canvas.width, result.canvas.height) <= 1280);
+  assert.ok(result.canvas.width * result.canvas.height <= 12_000_000);
+});

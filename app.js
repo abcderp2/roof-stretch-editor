@@ -505,12 +505,21 @@
   }
 
   async function createOutputBlob() {
-    const geometry = Core.computeGeometry(state.sourceWidth, state.sourceHeight, state.settings);
-    Core.validateGeometry(geometry, Core.LIMITS.maxOutputDimension, profile.exportPixelLimit);
     const result = Render.renderResult(state.image, state.sourceWidth, state.sourceHeight, state.settings, {
       maximumDimension: state.settings.outputMaxDimension,
       pixelLimit: profile.exportPixelLimit
     });
+    const actualPixels = result.canvas.width * result.canvas.height;
+    if (
+      result.canvas.width > Core.LIMITS.maxOutputDimension ||
+      result.canvas.height > Core.LIMITS.maxOutputDimension ||
+      !Number.isSafeInteger(actualPixels) ||
+      actualPixels > profile.exportPixelLimit
+    ) {
+      result.canvas.width = 1;
+      result.canvas.height = 1;
+      throw new Error("保存画像の実寸が端末の安全上限を超えています。最大の縦横を下げてください。");
+    }
     let exportCanvas = result.canvas;
     if (state.settings.outputFormat === "image/jpeg") {
       const flattened = document.createElement("canvas");
