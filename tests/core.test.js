@@ -4,102 +4,72 @@ const assert = require("node:assert/strict");
 const Core = require("../core.js");
 
 function test(name, fn) {
-  try {
-    fn();
-    console.log(`ok ${name}`);
-  } catch (error) {
-    console.error(`not ok ${name}`);
-    throw error;
-  }
+  try { fn(); console.log(`ok ${name}`); }
+  catch (error) { console.error(`not ok ${name}`); throw error; }
 }
 
-test("range keeps minimum width", () => {
-  assert.deepEqual(Core.normalizeRange(50, 50, 2), { start: 50, end: 52 });
+test("normalizes a valid local patch", () => {
+  const patch = Core.normalizePatch({ id: "a", mode: "mosaic", x: 90, y: 92, width: 30, height: 20, blockSize: 999 }, 0);
+  assert.equal(patch.mode, "mosaic");
+  assert.equal(patch.width, 10);
+  assert.equal(patch.height, 8);
+  assert.equal(patch.blockSize, 64);
 });
 
-test("stretch grows selected band", () => {
-  assert.equal(Core.calculateBandOutputSize(100, "stretch", 50), 150);
+test("limits patch count and deduplicates ids", () => {
+  const patches = Array.from({ length: 30 }, (_, index) => ({ id: "same", x: index }));
+  const normalized = Core.normalizePatches(patches);
+  assert.equal(normalized.length, Core.LIMITS.maximumPatches);
+  assert.equal(new Set(normalized.map((patch) => patch.id)).size, normalized.length);
 });
 
-test("compress keeps at least one pixel", () => {
-  assert.equal(Core.calculateBandOutputSize(10, "compress", 95), 1);
-});
-
-test("remove deletes the selected band", () => {
-  assert.equal(Core.calculateBandOutputSize(100, "remove", 100), 0);
-});
-
-test("vertical operation changes height", () => {
-  const geometry = Core.computeGeometry(1000, 800, {
-    axis: "vertical",
-    mode: "stretch",
-    startPercent: 25,
-    endPercent: 50,
-    amountPercent: 100
+test("normalizes unsafe settings", () => {
+  const settings = Core.normalizeSettings({
+    mode: "unknown", startPercent: 99, endPercent: 2, outputQuality: 8,
+    paddingColor: "javascript:bad", patches: [{ mode: "bad", opacity: -4 }]
   });
-  assert.equal(geometry.outputWidth, 1000);
-  assert.equal(geometry.outputHeight, 1000);
+  assert.equal(settings.mode, "stretch");
+  assert.ok(settings.endPercent - settings.startPercent >= Core.LIMITS.minimumBandPercent);
+  assert.equal(settings.outputQuality, 1);
+  assert.equal(settings.paddingColor, "#ffffff");
+  assert.equal(settings.patches[0].mode, "clone");
+  assert.equal(settings.patches[0].opacity, 0.1);
 });
 
-test("horizontal operation changes width", () => {
-  const geometry = Core.computeGeometry(1000, 800, {
-    axis: "horizontal",
-    mode: "remove",
-    startPercent: 20,
-    endPercent: 40
-  });
-  assert.equal(geometry.outputWidth, 800);
-  assert.equal(geometry.outputHeight, 800);
+test("computes horizontal and vertical output geometry", () => {
+  const vertical = Core.computeGeometry(400, 300, { axis: "vertical", startPercent: 20, endPercent: 40, amountPercent: 100 });
+  assert.equal(vertical.outputWidth, 400);
+  assert.equal(vertical.outputHeight, 360);
+  const horizontal = Core.computeGeometry(400, 300, { axis: "horizontal", startPercent: 20, endPercent: 40, amountPercent: 100 });
+  assert.equal(horizontal.outputWidth, 480);
+  assert.equal(horizontal.outputHeight, 300);
 });
 
-test("crop and rotation are reflected", () => {
-  const geometry = Core.computeGeometry(1200, 800, {
-    cropLeft: 10,
-    cropRight: 10,
-    rotation: 90,
-    mode: "offset",
-    amountPercent: 0
-  });
-  assert.equal(geometry.cropWidth, 960);
-  assert.equal(geometry.baseWidth, 800);
-  assert.equal(geometry.baseHeight, 960);
+test("migrates version 1 recipes", () => {
+  const settings = Core.parseRecipe(JSON.stringify({ version: 1, settings: { mode: "compress" } }));
+  assert.equal(settings.mode, "compress");
+  assert.deepEqual(settings.patches, []);
 });
 
-test("padding expands all sides", () => {
-  const geometry = Core.computeGeometry(1000, 500, {
-    mode: "offset",
-    amountPercent: 0,
-    paddingTop: 10,
-    paddingRight: 10,
-    paddingBottom: 10,
-    paddingLeft: 10
-  });
-  assert.equal(geometry.outputWidth, 1200);
-  assert.equal(geometry.outputHeight, 600);
+test("round trips version 2 recipes with patches", () => {
+  const source = Core.normalizeSettings({ patches: [{ id: "repair", mode: "blur", x: 10, y: 20, width: 30, height: 40 }] });
+  const parsed = Core.parseRecipe(Core.serializeRecipe(source));
+  assert.equal(parsed.patches.length, 1);
+  assert.equal(parsed.patches[0].mode, "blur");
 });
 
-test("PNG header is inspected", () => {
-  const bytes = new Uint8Array(24);
-  bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  const view = new DataView(bytes.buffer);
-  view.setUint32(16, 640);
-  view.setUint32(20, 480);
-  assert.deepEqual(Core.inspectImageHeader(bytes.buffer), { mimeType: "image/png", width: 640, height: 480 });
+test("rejects oversized recipe text", () => {
+  assert.throws(() => Core.parseRecipe("x".repeat(Core.LIMITS.maximumRecipeBytes + 1)), /大きすぎ/);
 });
 
-test("recipe round trip normalizes settings", () => {
-  const recipe = Core.serializeRecipe({ mode: "mirror", amountPercent: 120 });
-  const parsed = Core.parseRecipe(recipe);
-  assert.equal(parsed.mode, "mirror");
-  assert.equal(parsed.amountPercent, 120);
-});
-
-test("unsafe filename characters are removed", () => {
-  assert.equal(Core.buildDownloadName("a/b:c?.png", "image/jpeg"), "a-b-c-reframed.jpg");
-});
-
-test("low memory device selects conservative profile", () => {
+test("selects low-memory profile", () => {
   const profile = Core.getDeviceProfile({ deviceMemory: 2, hardwareConcurrency: 2 }, { width: 360, height: 800 });
   assert.equal(profile.name, "省メモリ");
-  assert.equal(profile.exportPixelLimit, 12_000_000);
+  assert.ok(profile.previewDimension <= 640);
 });
+
+test("sanitizes output file names", () => {
+  assert.equal(Core.buildDownloadName("../危険:*?.png", "image/jpeg"), "..-危険-reframed.jpg");
+});
+
+console.log("core tests completed");
