@@ -12,6 +12,7 @@ Pixel Reframe Labは静的なGitHub Pagesサイトです。画像処理はブラ
 
 - 外部APIと外部依存を追加しない
 - Content Security Policyで外部通信と埋め込みを拒否する
+- Permissions-Policyで不要な端末APIを使わない方針を明示する
 - JPEG、PNG、WebPの実データ署名と寸法を復号前に確認する
 - ファイル容量、画像寸法、画素数、出力寸法を制限する
 - レシピの容量、版、配列長、文字列、数値範囲を検証する
