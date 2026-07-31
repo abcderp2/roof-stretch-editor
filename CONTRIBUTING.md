@@ -2,33 +2,37 @@
 
 ## 基本方針
 
-追加課金、外部API、利用登録、ビルド必須化、依存パッケージの追加は原則として行いません。エントリークラスのスマートフォンとタブレットを基準にします。
+- 1回の変更目的を小さく保ちます。
+- mainを直接変更せず、作業ブランチとPull Requestを使います。
+- 外部ライブラリ、外部API、ビルド処理を安易に追加しません。
+- エントリークラスのスマートフォンとタブレットを基準にします。
+- 画像を外部へ送る変更は採用しません。
+- 表示文は初心者が次の操作を判断できる日本語にします。
 
-総合デザインツールへ広げず、画像の局所変形、外周生成、比率再構成に関係する変更へ絞ります。
+## ファイルの役割
 
-## 変更手順
-
-1. mainから作業ブランチを作る
-2. 1つの目的に関係する差分だけを入れる
-3. READMEやSECURITYの説明が変わる場合は同じ差分で更新する
-4. 自動検査を実行する
-5. スマートフォン幅とデスクトップ幅で手動確認する
-6. プルリクエストのFiles changedで不要なファイルがないか確認する
-7. squash mergeする
+core.jsは設定と検査、patch-render.jsは部分修正、render.jsは全体描画を担当します。app-base.jsは状態、app-patches.jsは部分修正UI、app-io.jsは入出力、app.jsはプレビューとイベントを担当します。
 
 ## 必須検査
 
 ```text
 node --check core.js
+node --check patch-render.js
 node --check render.js
+node --check app-base.js
+node --check app-patches.js
+node --check app-io.js
 node --check app.js
 node tests/core.test.js
 node tests/render.test.js
 node tests/static.test.js
+node tests/app-smoke.test.js
 ```
 
-## 実装上の注意
+画面変更では、360px、768px、1280px程度の幅で確認します。
 
-入力値は必ず正規化し、画像寸法とCanvas寸法に上限を設けます。ユーザー入力を `innerHTML` へ入れません。外部通信を追加しません。画像をLocalStorageやIndexedDBへ保存しません。
+## Pull Request
 
-描画ロジックは `render.js`、計算と検査は `core.js`、画面操作は `app.js` へ置きます。無料プランの一般的なAIでも1ファイルだけを読んで修正範囲を判断できる状態を保ちます。
+変更内容、理由、初心者への影響、低性能端末への影響、セキュリティへの影響、実行した検査、Revert後の状態を記載します。
+
+mainへの反映はsquash mergeを基本にします。
