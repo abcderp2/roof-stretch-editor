@@ -87,6 +87,10 @@ GitHub PagesではHTTPレスポンスヘッダーをすべて自由に設定で�
 
 特定企業の非公開な社内基準への適合や認証を示すものではありません。公開Webアプリで一般的な最小権限、依存最小化、入力検証、自動テスト、変更レビュー、戻しやすいマージを採用しています。
 
+## 検索とAI向け案内
+
+公開ページは検索エンジンとAIの訪問、利用者の指示による取得、要約、引用を歓迎します。詳細な範囲と制限は[ai.txt](ai.txt)、クローラー向けの公開方針は[robots.txt](robots.txt)、正規URLは[sitemap.xml](sitemap.xml)を確認してください。これらは認証、アクセス制御、技術的制御の回避を許可するものではありません。
+
 ## 低性能端末への配慮
 
 - 端末のメモリ、CPUコア数、画面幅からプレビュー上限を調整します。
@@ -110,6 +114,9 @@ roof-stretch-editor/
 ├── app-io.js
 ├── app.js
 ├── README.md
+├── robots.txt
+├── ai.txt
+├── sitemap.xml
 ├── SECURITY.md
 ├── CONTRIBUTING.md
 ├── LICENSE
