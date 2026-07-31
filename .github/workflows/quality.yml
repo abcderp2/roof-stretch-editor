@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 permissions:
   contents: read
@@ -28,3 +29,5 @@ jobs:
         run: node tests/render.test.js
       - name: Static security and DOM checks
         run: node tests/static.test.js
+      - name: App initialization smoke test
+        run: node tests/app-smoke.test.js
