@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="画像の屋根部分をブラウザ内だけで縦方向に伸ばせる、無料の軽量画像編集ツールです。">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'none'; font-src 'self'; object-src 'none'; media-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Roof Stretch Editor</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">操作画面へ移動</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <p class="site-name">Roof Stretch Editor</p>
+      <p class="site-tagline">画像は端末の外へ送信されません</p>
+    </div>
+  </header>
+
+  <main id="main-content" class="page-shell">
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">無料で使えるブラウザ画像編集</p>
+      <h1 id="page-title">屋根部分を自然に縦へ伸ばす</h1>
+      <p class="hero-copy">
+        画像を選び、伸ばしたい屋根の範囲と伸ばす量を指定してください。処理はすべてブラウザ内で完結します。
+      </p>
+    </section>
+
+    <noscript>
+      <div class="notice notice-error">
+        このツールにはJavaScriptが必要です。ブラウザの設定でJavaScriptを有効にしてください。
+      </div>
+    </noscript>
+
+    <section class="editor-layout" aria-label="画像編集画面">
+      <aside class="panel controls-panel" aria-labelledby="controls-title">
+        <h2 id="controls-title">編集設定</h2>
+
+        <div class="control-group">
+          <label class="file-label" for="image-input">画像を選ぶ</label>
+          <input
+            id="image-input"
+            class="file-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+          >
+          <p class="help-text">JPEG、PNG、WebP。最大12MB、最大1600万画素です。</p>
+        </div>
+
+        <div id="status" class="status" role="status" aria-live="polite">
+          画像を選ぶと編集を始められます。
+        </div>
+
+        <fieldset id="range-controls" class="control-fieldset" disabled>
+          <legend>伸ばす範囲</legend>
+
+          <div class="range-control">
+            <div class="label-row">
+              <label for="range-start">範囲の上端</label>
+              <output id="range-start-output" for="range-start">0%</output>
+            </div>
+            <input id="range-start" type="range" min="0" max="95" step="1" value="0">
+          </div>
+
+          <div class="range-control">
+            <div class="label-row">
+              <label for="range-end">範囲の下端</label>
+              <output id="range-end-output" for="range-end">40%</output>
+            </div>
+            <input id="range-end" type="range" min="5" max="100" step="1" value="40">
+          </div>
+
+          <div class="range-control">
+            <div class="label-row">
+              <label for="stretch-amount">伸ばす量</label>
+              <output id="stretch-output" for="stretch-amount">40%</output>
+            </div>
+            <input id="stretch-amount" type="range" min="0" max="150" step="1" value="40">
+            <p class="help-text">選択範囲の高さに対する追加量です。</p>
+          </div>
+        </fieldset>
+
+        <fieldset id="view-controls" class="control-fieldset view-options" disabled>
+          <legend>プレビュー</legend>
+          <label>
+            <input type="radio" name="preview-mode" value="selection" checked>
+            範囲を確認
+          </label>
+          <label>
+            <input type="radio" name="preview-mode" value="result">
+            仕上がりを確認
+          </label>
+        </fieldset>
+
+        <fieldset id="download-controls" class="control-fieldset" disabled>
+          <legend>保存設定</legend>
+          <label for="output-format">保存形式</label>
+          <select id="output-format">
+            <option value="image/png">PNG</option>
+            <option value="image/jpeg">JPEG</option>
+            <option value="image/webp">WebP</option>
+          </select>
+        </fieldset>
+
+        <div class="button-row">
+          <button id="reset-button" class="button button-secondary" type="button" disabled>設定を戻す</button>
+          <button id="clear-button" class="button button-secondary" type="button" disabled>画像を外す</button>
+          <button id="download-button" class="button button-primary" type="button" disabled>画像を保存</button>
+        </div>
+      </aside>
+
+      <section class="panel preview-panel" aria-labelledby="preview-title">
+        <div class="preview-heading">
+          <div>
+            <h2 id="preview-title">プレビュー</h2>
+            <p id="dimension-text" class="dimension-text">画像はまだ選ばれていません</p>
+          </div>
+          <p id="mode-label" class="mode-label">範囲確認</p>
+        </div>
+
+        <div id="canvas-shell" class="canvas-shell">
+          <p id="empty-preview" class="empty-preview">ここに画像が表示されます</p>
+          <canvas id="preview-canvas" hidden aria-label="画像編集のプレビュー">
+            お使いのブラウザはCanvasに対応していません。
+          </canvas>
+        </div>
+
+        <div class="privacy-note">
+          <h3>プライバシーと安全性</h3>
+          <p>
+            画像の読み込み、編集、保存は端末内で行います。外部API、解析サービス、広告サービスは使用していません。
+          </p>
+        </div>
+      </section>
+    </section>
+
+    <section class="panel guide-panel" aria-labelledby="guide-title">
+      <h2 id="guide-title">使い方</h2>
+      <ol>
+        <li>屋根が写っている画像を選びます。</li>
+        <li>上端と下端を動かし、伸ばしたい屋根部分を囲みます。</li>
+        <li>伸ばす量を調整し、仕上がりを確認します。</li>
+        <li>保存形式を選び、画像を保存します。</li>
+      </ol>
+      <p>
+        境界線が目立つ場合は、模様や色が急に変わらない範囲を選ぶと自然になりやすくなります。
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Roof Stretch Editor</p>
+  </footer>
+</body>
+</html>
