@@ -9,17 +9,19 @@
 - 画像を外部へ送る変更は採用しません。
 - 表示文は初心者が次の操作を判断できる日本語にします。
 
-## 変更前
+## ファイルの役割
 
-1. READMEの使い方と制限を確認します。
-2. core.js、render.js、app.jsのどこを変更するか決めます。
-3. unrelatedな変更を同じPull Requestへ混ぜません。
+core.jsは設定と検査、patch-render.jsは部分修正、render.jsは全体描画を担当します。app-base.jsは状態、app-patches.jsは部分修正UI、app-io.jsは入出力、app.jsはプレビューとイベントを担当します。
 
 ## 必須検査
 
 ```text
 node --check core.js
+node --check patch-render.js
 node --check render.js
+node --check app-base.js
+node --check app-patches.js
+node --check app-io.js
 node --check app.js
 node tests/core.test.js
 node tests/render.test.js
@@ -31,14 +33,6 @@ node tests/app-smoke.test.js
 
 ## Pull Request
 
-本文へ次を記載します。
-
-- 変更内容
-- 変更理由
-- 初心者への影響
-- 低性能端末への影響
-- セキュリティへの影響
-- 実行した検査
-- Revertした場合の戻り方
+変更内容、理由、初心者への影響、低性能端末への影響、セキュリティへの影響、実行した検査、Revert後の状態を記載します。
 
 mainへの反映はsquash mergeを基本にします。
