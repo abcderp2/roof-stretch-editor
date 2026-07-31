@@ -14,7 +14,7 @@ async function loadFile(file) {
     const pixels = nextImage.naturalWidth * nextImage.naturalHeight;
     if (nextImage.naturalWidth <= 0 || nextImage.naturalHeight <= 0 || pixels > Core.LIMITS.maxSourcePixels) { URL.revokeObjectURL(nextUrl); throw new Error("復号後の画像サイズが安全上限を超えています。"); }
     releaseImage(); state.image = nextImage; state.objectUrl = nextUrl; state.fileName = file.name || "image"; state.sourceWidth = nextImage.naturalWidth; state.sourceHeight = nextImage.naturalHeight;
-    state.settings = Core.normalizeSettings(Object.assign({}, Core.DEFAULTS, { outputFormat: header.mimeType, outputQuality: state.settings.outputQuality, outputMaxDimension: state.settings.outputMaxDimension }));
+    state.settings = Core.normalizeSettings(Object.assign({}, Core.DEFAULTS, { amountPercent: 0, outputFormat: header.mimeType, outputQuality: state.settings.outputQuality, outputMaxDimension: state.settings.outputMaxDimension }));
     state.history = [snapshot(state.settings)]; state.historyIndex = 0; state.selection = null; resetPatchForm(); applySettingsToControls();
     setStatus("画像を読み込みました。左の元画像で直したい場所を囲んでください。", "success"); scheduleRender();
   } catch (error) { elements.imageInput.value = ""; updateEnabled(); handleError(error, "画像を読み込めませんでした。"); }
@@ -56,7 +56,7 @@ const presets = {
 function applyPreset(name) { if (!presets[name]) return; state.settings = Core.normalizeSettings(Object.assign({}, state.settings, presets[name])); applySettingsToControls(); commitHistory("目的別の設定を適用しました。右の結果を確認してください。"); scheduleRender(); }
 function undo() { restoreHistory(state.historyIndex - 1); setStatus("1つ前の状態へ戻しました。", "success"); }
 function redo() { restoreHistory(state.historyIndex + 1); setStatus("取り消した状態をやり直しました。", "success"); }
-function resetSettings() { state.settings = Core.normalizeSettings(Core.DEFAULTS); state.selection = null; resetPatchForm(); applySettingsToControls(); commitHistory("編集設定と部分修正を初期状態へ戻しました。"); scheduleRender(); }
+function resetSettings() { state.settings = Core.normalizeSettings(Object.assign({}, Core.DEFAULTS, { amountPercent: 0 })); state.selection = null; resetPatchForm(); applySettingsToControls(); commitHistory("編集設定と部分修正を初期状態へ戻しました。"); scheduleRender(); }
 function rotate(delta) { state.settings.rotation = (state.settings.rotation + delta + 360) % 360; state.settings = Core.normalizeSettings(state.settings); applySettingsToControls(); commitHistory(); scheduleRender(); }
 function toggleFlip(key, button) { state.settings[key] = !state.settings[key]; state.settings = Core.normalizeSettings(state.settings); button.setAttribute("aria-pressed", String(state.settings[key])); commitHistory(); scheduleRender(); }
 
