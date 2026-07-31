@@ -1,0 +1,88 @@
+"use strict";
+const fs = require("node:fs");
+const vm = require("node:vm");
+const assert = require("node:assert/strict");
+
+class FakeElement {
+  constructor(id, tagName = "DIV") {
+    this.id = id || "";
+    this.tagName = tagName;
+    this.value = "";
+    this.disabled = false;
+    this.hidden = false;
+    this.checked = false;
+    this.textContent = "";
+    this.dataset = {};
+    this.style = {};
+    this.files = [];
+    this.children = [];
+    this.clientWidth = 600;
+    this.scrollWidth = 600;
+    this.scrollHeight = 400;
+    this.attributes = {};
+    this.className = "";
+  }
+  addEventListener() {}
+  append(...items) { this.children.push(...items); }
+  appendChild(item) { this.children.push(item); return item; }
+  setAttribute(name, value) { this.attributes[name] = String(value); }
+  getAttribute(name) { return this.attributes[name]; }
+  removeAttribute(name) { delete this.attributes[name]; delete this.dataset[name]; }
+  focus() {}
+  scrollTo() {}
+  setPointerCapture() {}
+  getBoundingClientRect() { return { left: 0, top: 0, width: 600, height: 400 }; }
+  getContext() { return { clearRect() {}, drawImage() {}, fillRect() {}, createLinearGradient() { return { addColorStop() {} }; }, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, arc() {}, fillText() {} }; }
+  toBlob(callback, type) { callback({ type: type || "image/png" }); }
+}
+
+const html = fs.readFileSync(__dirname + "/../index.html", "utf8");
+const ids = [...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
+const elements = new Map(ids.map((id) => [id, new FakeElement(id, id.includes("input") ? "INPUT" : "DIV")]));
+for (const id of ["before-canvas", "after-canvas"]) elements.get(id).hidden = true;
+const axisVertical = new FakeElement("", "INPUT"); axisVertical.value = "vertical"; axisVertical.checked = true;
+const axisHorizontal = new FakeElement("", "INPUT"); axisHorizontal.value = "horizontal";
+const presetButtons = ["headroom", "side-space", "remove-strip", "mirror-texture", "compress-center", "glitch-shift"].map((name) => { const e = new FakeElement(); e.dataset.preset = name; return e; });
+
+const document = {
+  querySelector(selector) {
+    if (selector.startsWith("#")) return elements.get(selector.slice(1)) || null;
+    if (selector.includes('name="axis"') && selector.includes('value="vertical"')) return axisVertical;
+    if (selector.includes('name="axis"') && selector.includes('value="horizontal"')) return axisHorizontal;
+    return null;
+  },
+  querySelectorAll(selector) {
+    if (selector === "[data-preset]") return presetButtons;
+    if (selector === 'input[name="axis"]') return [axisVertical, axisHorizontal];
+    return [];
+  },
+  createElement(name) { return new FakeElement("", name.toUpperCase()); },
+  addEventListener() {},
+  body: new FakeElement("body", "BODY")
+};
+
+const context = {
+  console,
+  globalThis: null,
+  document,
+  navigator: { deviceMemory: 4, hardwareConcurrency: 4 },
+  screen: { width: 800, height: 1200 },
+  localStorage: { getItem() { return null; }, setItem() {} },
+  requestAnimationFrame() { return 1; },
+  cancelAnimationFrame() {},
+  window: { innerHeight: 800, addEventListener() {}, setTimeout() {} },
+  URL: { createObjectURL() { return "blob:test"; }, revokeObjectURL() {} },
+  Image: class {},
+  File: class {},
+  Blob: class {},
+  setTimeout() {},
+  clearTimeout() {}
+};
+context.globalThis = context;
+vm.createContext(context);
+vm.runInContext(fs.readFileSync(__dirname + "/../core.js", "utf8"), context);
+context.LocalTransformRender = { renderResult() {}, renderOriginalPreview() {} };
+vm.runInContext(fs.readFileSync(__dirname + "/../app.js", "utf8"), context);
+assert.match(elements.get("next-action").textContent, /画像/);
+assert.equal(elements.get("patch-controls").disabled, true);
+console.log("app smoke test completed");
