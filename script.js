@@ -1,6 +1,7 @@
 (() => {
   "use strict";
 
+  // 低スペック端末でメモリ不足を起こしにくくするための上限です。
   const LIMITS = Object.freeze({
     maxFileBytes: 12 * 1024 * 1024,
     maxSourcePixels: 16_000_000,
@@ -11,6 +12,7 @@
     minimumBandPercent: 5
   });
 
+  // 設定を戻す操作で使用する初期値です。
   const DEFAULTS = Object.freeze({
     startPercent: 0,
     endPercent: 40,
@@ -43,6 +45,7 @@
     modeLabel: document.querySelector("#mode-label")
   };
 
+  // 読み込んだ画像と処理中の状態を1か所で管理します。
   const state = {
     image: null,
     fileName: "image",
@@ -119,6 +122,7 @@
     elements.stretchOutput.textContent = `${elements.stretchAmount.value}%`;
   }
 
+  // 選択帯の位置と、伸長後の画像サイズを整数ピクセルで計算します。
   function calculateGeometry(width, height, settings) {
     const startY = Math.round(height * settings.startPercent / 100);
     const rawEndY = Math.round(height * settings.endPercent / 100);
@@ -169,6 +173,7 @@
     return context;
   }
 
+  // 上部、伸ばす帯、下部の3領域に分けて描画し、元画像の幅は変えません。
   function drawStretchedImage(context, source, geometry, targetWidth, targetHeight) {
     const topHeight = Math.round(targetHeight * geometry.startY / geometry.outputHeight);
     const stretchedBandHeight = Math.round(
@@ -289,6 +294,7 @@
     }
   }
 
+  // スライダー操作が続いても、1画面更新につき1回だけ再描画します。
   function scheduleRender() {
     if (state.renderFrame !== null) {
       cancelAnimationFrame(state.renderFrame);
@@ -296,6 +302,7 @@
     state.renderFrame = requestAnimationFrame(renderPreviewNow);
   }
 
+  // 画像を展開する前に、形式とファイル容量を検証します。
   function validateFile(file) {
     if (!file) {
       throw new Error("画像ファイルが選ばれていません。");
@@ -353,6 +360,7 @@
     }
   }
 
+  // 新しい画像を読み込み、成功した場合だけ現在の画像と入れ替えます。
   async function handleFileSelection() {
     const file = elements.imageInput.files ? elements.imageInput.files[0] : null;
 
@@ -486,6 +494,7 @@
     return `${safeBase}-stretched.${extension}`;
   }
 
+  // 保存時だけ元画像サイズのCanvasを作り、通常操作時のメモリ使用量を抑えます。
   async function downloadImage() {
     if (!state.image || state.isDownloading) {
       return;
@@ -573,6 +582,7 @@
     window.addEventListener("beforeunload", releaseCurrentImage, { once: true });
   }
 
+  // 必要なブラウザ機能を確認してから操作を有効にします。
   function initialize() {
     if (!elements.canvas.getContext) {
       setStatus("このブラウザでは画像編集機能を利用できません。", "error");
