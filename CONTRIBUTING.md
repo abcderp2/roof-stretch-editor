@@ -9,6 +9,8 @@
 - 画像を外部へ送る変更は採用しません。
 - 表示文は初心者が次の操作を判断できる日本語にします。
 
+変更前にREADME.md、SECURITY.md、MAINTENANCE.mdを確認してください。
+
 ## ファイルの役割
 
 core.jsは設定と検査、patch-render.jsは部分修正、render.jsは全体描画を担当します。app-base.jsは状態、app-patches.jsは部分修正UI、app-io.jsは入出力、app.jsはプレビューとイベントを担当します。
@@ -29,7 +31,7 @@ node tests/static.test.js
 node tests/app-smoke.test.js
 ```
 
-画面変更では、360px、768px、1280px程度の幅で確認します。
+画面変更では、幅280px、320px、360px、768px、1024px、1440px、スマートフォン横向きで確認します。
 
 ## Pull Request
 
