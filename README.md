@@ -119,6 +119,7 @@ roof-stretch-editor/
 ├── sitemap.xml
 ├── SECURITY.md
 ├── CONTRIBUTING.md
+├── MAINTENANCE.md
 ├── LICENSE
 ├── .nojekyll
 ├── tests/
@@ -153,9 +154,11 @@ node tests/app-smoke.test.js
 
 GitHub Actionsでも同じ検査を実行します。
 
-手動確認では、サンプル生成、2画面表示、矩形選択、8種類の部分修正、追加と更新と削除、履歴、400%拡大、スマートフォン表示、3形式保存、外部通信なしを確認します。
+手動確認では、幅280px、320px、360px、768px、1024px、1440px、スマートフォン横向きで、サンプル生成、2画面表示、矩形選択、8種類の部分修正、追加と更新と削除、履歴、400%拡大、3形式保存、外部通信なしを確認します。
 
 ## 変更を戻す方法
+
+詳しい変更、確認、公開、切り戻しは[MAINTENANCE.md](MAINTENANCE.md)にまとめています。
 
 機能追加は作業ブランチとPull Requestで行い、squash mergeします。問題が見つかった場合は該当Pull RequestをRevertすると、変更全体を1回で戻せます。
 
