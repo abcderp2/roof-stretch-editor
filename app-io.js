@@ -3,9 +3,16 @@
 function loadImageFromUrl(url) { return new Promise((resolve, reject) => { const image = new Image(); image.decoding = "async"; image.onload = () => resolve(image); image.onerror = () => reject(new Error("画像を復号できませんでした。ファイルが壊れていないか確認してください。")); image.src = url; }); }
 function releaseImage() { if (state.objectUrl) URL.revokeObjectURL(state.objectUrl); state.image = null; state.objectUrl = null; state.fileName = "image"; state.sourceWidth = 0; state.sourceHeight = 0; }
 
+function validateImageFileBeforeRead(file) {
+  if (!file || typeof file.size !== "number") throw new Error("画像ファイルが選ばれていません。");
+  if (file.size <= 0) throw new Error("空のファイルは読み込めません。");
+  if (file.size > Core.LIMITS.maxFileBytes) throw new Error(`画像は${Math.round(Core.LIMITS.maxFileBytes / 1024 / 1024)}MB以下にしてください。`);
+}
+
 async function loadFile(file) {
   const token = ++state.loadToken;
   try {
+    validateImageFileBeforeRead(file);
     setStatus("画像の実データを確認しています。", "info"); setFieldsets(false);
     const buffer = await file.arrayBuffer(); const header = Core.inspectImageHeader(buffer); Core.validateFileMetadata(file, header); if (token !== state.loadToken) return;
     const nextUrl = URL.createObjectURL(file); let nextImage;
