@@ -6,12 +6,12 @@ mainブランチで公開されている最新版を対象とします。
 
 ## 設計
 
-Pixel Reframe Labは静的なGitHub Pagesサイトです。画像処理はブラウザ内で完結し、画像、レシピ、操作履歴を外部サービスへ送信しません。
+Pixel Reframe Labは静的なGitHub Pagesサイトです。画像、レシピ、操作履歴の編集処理はブラウザ内で完結し、サイトから外部サービスへ自動送信しません。利用者が共有を選んだ場合だけ、生成した画像ファイルを端末のWeb Share機能へ渡し、利用者が選択した共有先へ送ります。
 
 次の防御を維持します。
 
 - 外部APIと外部依存を追加しない
-- Content Security Policyで外部通信と埋め込み対象を制限する
+- Content Security Policyでサイトコードによる外部通信と埋め込み対象を制限する
 - HTMLのPermissions-Policy metaをセキュリティ防御として扱わない
 - JPEG、PNG、WebPの実データ署名と寸法を復号前に確認する
 - ファイル容量、画像寸法、画素数、出力寸法を制限する
@@ -19,8 +19,11 @@ Pixel Reframe Labは静的なGitHub Pagesサイトです。画像処理はブラ
 - innerHTML、eval、動的Function生成を使用しない
 - 画像データをLocalStorageへ保存しない
 - Object URLと一時Canvasを使用後に解放する
+- 共有は利用者の明示操作からだけ開始し、自動共有やバックグラウンド送信を追加しない
 
 Content Security Policyはmeta要素で適用できる範囲の防御を維持します。ただし、frame-ancestorsなどmeta要素では適用できない指示を、効いている防御として記載しません。
+
+Web Share APIは、共有ボタンを利用者が選んだときに生成済み画像を端末の共有UIへ渡す機能です。サイト自身が共有先を選んだり、自動でアップロードしたりする仕組みとは区別します。共有先へ渡った後のデータ処理は、その共有先と端末の仕組みに従います。
 
 ## 報告時に含める情報
 
