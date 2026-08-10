@@ -79,7 +79,17 @@ function bindEvents() {
   elements.zoomFit.addEventListener("click", () => { state.zoom = 100; applyZoom(); elements.beforeViewport.scrollTo(0, 0); elements.afterViewport.scrollTo(0, 0); });
   window.addEventListener("resize", scheduleRender); window.addEventListener("keydown", handleKeyboard); window.addEventListener("beforeunload", releaseImage, { once: true });
 }
+function isEmbeddedContext() {
+  try { return window.self !== window.top; } catch (error) { return true; }
+}
+function lockEmbeddedContext() {
+  for (const control of document.querySelectorAll("button,input,select,textarea")) control.disabled = true;
+  setFieldsets(false);
+  setStatus("埋め込み表示では画像編集を開始できません。このページを直接開いて操作してください。", "error");
+  elements.nextAction.textContent = "このページを直接開くと画像編集を利用できます。";
+}
 function initialize() {
+  if (isEmbeddedContext()) { lockEmbeddedContext(); return; }
   if (!elements.beforeCanvas.getContext || !elements.afterCanvas.getContext) { setStatus("このブラウザでは画像編集機能を利用できません。", "error"); return; }
   elements.deviceProfile.textContent = `端末向け設定: ${profile.name}、プレビュー最大${profile.previewDimension}px`;
   if (navigator.share && typeof File === "function") elements.shareButton.hidden = false;
