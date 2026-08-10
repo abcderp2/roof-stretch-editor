@@ -6,20 +6,23 @@
   const createCanvas = Patch.createCanvas;
   const getContext = Patch.getContext;
 
-  function buildBaseCanvas(patchedSource, geometry, scale) {
-    const width = Math.max(1, Math.round(geometry.baseWidth * scale));
-    const height = Math.max(1, Math.round(geometry.baseHeight * scale));
+  function buildBaseCanvas(source, geometry, outputScale, sourceScale) {
+    const width = Math.max(1, Math.round(geometry.baseWidth * outputScale));
+    const height = Math.max(1, Math.round(geometry.baseHeight * outputScale));
     const canvas = createCanvas(width, height);
     const context = getContext(canvas, true);
-    const cropX = geometry.cropX * scale;
-    const cropY = geometry.cropY * scale;
-    const cropWidth = geometry.cropWidth * scale;
-    const cropHeight = geometry.cropHeight * scale;
+    const inputScale = Number.isFinite(sourceScale) ? sourceScale : outputScale;
+    const sourceCropX = geometry.cropX * inputScale;
+    const sourceCropY = geometry.cropY * inputScale;
+    const sourceCropWidth = geometry.cropWidth * inputScale;
+    const sourceCropHeight = geometry.cropHeight * inputScale;
+    const destinationCropWidth = geometry.cropWidth * outputScale;
+    const destinationCropHeight = geometry.cropHeight * outputScale;
     context.save();
     context.translate(width / 2, height / 2);
     context.scale(geometry.settings.flipX ? -1 : 1, geometry.settings.flipY ? -1 : 1);
     context.rotate(geometry.settings.rotation * Math.PI / 180);
-    context.drawImage(patchedSource, cropX, cropY, cropWidth, cropHeight, -cropWidth / 2, -cropHeight / 2, cropWidth, cropHeight);
+    context.drawImage(source, sourceCropX, sourceCropY, sourceCropWidth, sourceCropHeight, -destinationCropWidth / 2, -destinationCropHeight / 2, destinationCropWidth, destinationCropHeight);
     context.restore();
     return canvas;
   }
@@ -206,10 +209,10 @@
     const maximumDimension = Math.max(1, options && options.maximumDimension || settings.outputMaxDimension);
     const pixelLimit = Math.max(1, options && options.pixelLimit || Core.LIMITS.maxOutputPixels);
     const scale = calculateScale(geometry, maximumDimension, pixelLimit);
-    const patchedSource = Patch.buildPatchedSourceCanvas(source, sourceWidth, sourceHeight, scale, settings.patches);
-    const base = buildBaseCanvas(patchedSource, geometry, scale);
-    patchedSource.width = 1;
-    patchedSource.height = 1;
+    const hasPatches = settings.patches.length > 0;
+    const workingSource = hasPatches ? Patch.buildPatchedSourceCanvas(source, sourceWidth, sourceHeight, scale, settings.patches) : source;
+    const base = buildBaseCanvas(workingSource, geometry, scale, hasPatches ? scale : 1);
+    if (hasPatches) { workingSource.width = 1; workingSource.height = 1; }
     const operation = applyOperation(base, settings);
     if (operation.canvas !== base) { base.width = 1; base.height = 1; }
     let output = applyPadding(operation.canvas, settings);
