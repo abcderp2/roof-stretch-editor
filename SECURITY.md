@@ -19,9 +19,13 @@ Pixel Reframe Labは静的なGitHub Pagesサイトです。画像、レシピ、
 - innerHTML、eval、動的Function生成を使用しない
 - 画像データをLocalStorageへ保存しない
 - Object URLと一時Canvasを使用後に解放する
+- 部分修正では修正ごとの全画面Canvas複製を作らず、1枚の作業Canvasと修正範囲の一時Canvasを再利用する
 - 共有は利用者の明示操作からだけ開始し、自動共有やバックグラウンド送信を追加しない
+- 埋め込み表示を検出した場合は、編集用のbutton、input、select、textareaを無効化し、イベント登録前に初期化を停止する
 
 Content Security Policyはmeta要素で適用できる範囲の防御を維持します。ただし、frame-ancestorsなどmeta要素では適用できない指示を、効いている防御として記載しません。
+
+埋め込み表示時の操作ロックは、静的なGitHub Pages上でクリックジャッキングの操作面を減らすための補助防御です。HTTPレスポンスヘッダーの`Content-Security-Policy: frame-ancestors 'none'`や`X-Frame-Options`と同等の配信制御ではありません。ブラウザ内のJavaScriptだけを完全な埋め込み禁止として扱いません。
 
 Web Share APIは、共有ボタンを利用者が選んだときに生成済み画像を端末の共有UIへ渡す機能です。サイト自身が共有先を選んだり、自動でアップロードしたりする仕組みとは区別します。共有先へ渡った後のデータ処理は、その共有先と端末の仕組みに従います。
 
@@ -33,6 +37,6 @@ Web Share APIは、共有ボタンを利用者が選んだときに生成済み�
 
 ## 制限
 
-GitHub Pagesでは、リポジトリ側から任意のHTTPセキュリティヘッダーを自由に設定できません。そのため、Permissions-Policyをmeta要素で代用しません。現在の静的な用途では、依存を増やさず、CSP、外部通信禁止、入力検査、データ最小化を優先します。
+GitHub Pagesでは、リポジトリ側から任意のHTTPセキュリティヘッダーを自由に設定できません。そのため、Permissions-Policyをmeta要素で代用せず、frame-ancestorsをmeta CSPへ追加して埋め込み禁止を保証したようにも扱いません。現在の静的な用途では、CSP、外部通信禁止、入力検査、データ最小化、埋め込み時の操作ロックを優先します。
 
 将来、認証、決済、機密データ送信、カメラやマイクなどの端末API、または埋め込み禁止を強く要求する機能を追加する場合は、Permissions-Policyやframe-ancestorsなどをHTTPレスポンスヘッダーで設定できる配信環境への移行を先に検討します。
