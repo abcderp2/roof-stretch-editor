@@ -6,6 +6,7 @@ const ai=fs.readFileSync(path.join(root,"ai.txt"),"utf8");
 const sitemap=fs.readFileSync(path.join(root,"sitemap.xml"),"utf8");
 const readme=fs.readFileSync(path.join(root,"README.md"),"utf8");
 const maintenance=fs.readFileSync(path.join(root,"MAINTENANCE.md"),"utf8");
+const security=fs.readFileSync(path.join(root,"SECURITY.md"),"utf8");
 const styles=fs.readFileSync(path.join(root,"style.css"),"utf8");
 const responsive=fs.readFileSync(path.join(root,"responsive.css"),"utf8");
 const appIo=fs.readFileSync(path.join(root,"app-io.js"),"utf8");
@@ -17,11 +18,13 @@ const workflow=fs.readFileSync(path.join(root,".github/workflows/quality.yml"),"
 const ids=[...app.matchAll(/querySelector\("#([a-zA-Z0-9_-]+)"\)/g)].map((match)=>match[1]);
 for(const id of ids)assert.match(html,new RegExp(`id=["']${id}["']`),`missing DOM id ${id}`);
 assert.equal(new Set(ids).size,ids.length,"duplicate app DOM references");
-assert.match(html,/connect-src 'none'/);assert.match(html,/img-src 'self' blob:/);assert.doesNotMatch(html,/img-src 'self' blob: data:/);assert.match(html,/object-src 'none'/);assert.match(html,/frame-src 'none'/);assert.match(html,/form-action 'none'/);assert.match(html,/script-src-attr 'none'/);assert.match(html,/style-src-attr 'none'/);assert.doesNotMatch(html,/http-equiv=["']Permissions-Policy["']/i);assert.match(html,/href="ai\.txt"/);assert.match(readme,/MAINTENANCE\.md/);assert.match(maintenance,/git revert|Revert/i);assert.match(styles,/min-width:\s*280px/);assert.match(responsive,/max-width:\s*620px/);assert.match(robots,/User-agent: \*/);assert.match(robots,/Sitemap:/);assert.match(ai,/MIT License/);assert.match(ai,/model training|モデル学習/);assert.match(sitemap,/https:\/\/abcderp2\.github\.io\/roof-stretch-editor\//);
+assert.match(html,/connect-src 'none'/);assert.match(html,/img-src 'self' blob:/);assert.doesNotMatch(html,/img-src 'self' blob: data:/);assert.match(html,/object-src 'none'/);assert.match(html,/frame-src 'none'/);assert.match(html,/form-action 'none'/);assert.match(html,/script-src-attr 'none'/);assert.match(html,/style-src-attr 'none'/);assert.doesNotMatch(html,/frame-ancestors/i);assert.doesNotMatch(html,/http-equiv=["']Permissions-Policy["']/i);assert.match(html,/href="ai\.txt"/);assert.match(readme,/MAINTENANCE\.md/);assert.match(maintenance,/git revert|Revert/i);assert.match(styles,/min-width:\s*280px/);assert.match(responsive,/max-width:\s*620px/);assert.match(robots,/User-agent: \*/);assert.match(robots,/Sitemap:/);assert.match(ai,/MIT License/);assert.match(ai,/model training|モデル学習/);assert.match(sitemap,/https:\/\/abcderp2\.github\.io\/roof-stretch-editor\//);
 assert.match(html,/<meta name="robots" content="index, follow">/);assert.match(html,/<link rel="canonical" href="https:\/\/abcderp2\.github\.io\/roof-stretch-editor\/">/);assert.match(html,/<meta property="og:title" content="Pixel Reframe Lab">/);assert.match(html,/編集処理は端末内/);assert.match(html,/画像は自動送信しません。共有を選ぶと、端末で選択した共有先へ画像を渡します。/);assert.doesNotMatch(html,/外部送信なし/);
 const expectedPublicUrl="https://abcderp2.github.io/roof-stretch-editor/";const htmlWithoutExpectedUrls=html.split(expectedPublicUrl).join("");assert.doesNotMatch(htmlWithoutExpectedUrls,/https?:\/\//);
 for(const source of [app,core,render]){assert.doesNotMatch(source,/\beval\s*\(/);assert.doesNotMatch(source,/new\s+Function\s*\(/);assert.doesNotMatch(source,/\.innerHTML\s*=/);assert.doesNotMatch(source,/\bfetch\s*\(/);assert.doesNotMatch(source,/XMLHttpRequest|WebSocket/);}
 assert.match(appIo,/navigator\.share\(\{ files: \[file\], title: "Pixel Reframe Lab" \}\)/);assert.match(appIo,/navigator\.canShare/);
+assert.match(app,/window\.self !== window\.top/);assert.match(app,/querySelectorAll\("button,input,select,textarea"\)/);assert.match(app,/埋め込み表示では画像編集を開始できません/);assert.match(security,/frame-ancestors/);assert.match(security,/埋め込み表示/);
+assert.match(render,/applyPatches\(canvas, scaled, \{ inPlace: true \}\)/);assert.doesNotMatch(render,/const snapshot = copyCanvas\(canvas\)/);
 const loadFileStart=appIo.indexOf("async function loadFile(file)");const loadFileEnd=appIo.indexOf("\n}\n\nfunction canvasToBlob",loadFileStart);const loadFileBody=appIo.slice(loadFileStart,loadFileEnd);
 assert.ok(loadFileStart>=0&&loadFileEnd>loadFileStart,"loadFile function must exist");
 assert.match(appIo,/file\.size > Core\.LIMITS\.maxFileBytes/);
