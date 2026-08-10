@@ -32,43 +32,43 @@
     return canvas;
   }
 
-  function createPatchCanvas(snapshot, patch, rect) {
+  function createPatchCanvas(source, patch, rect) {
     const temp = createCanvas(rect.width, rect.height);
     const context = getContext(temp, true);
-    const sourceX = Core.clamp(rect.x + Math.round(snapshot.width * patch.sourceOffsetX / 100), 0, Math.max(0, snapshot.width - rect.width));
-    const sourceY = Core.clamp(rect.y + Math.round(snapshot.height * patch.sourceOffsetY / 100), 0, Math.max(0, snapshot.height - rect.height));
+    const sourceX = Core.clamp(rect.x + Math.round(source.width * patch.sourceOffsetX / 100), 0, Math.max(0, source.width - rect.width));
+    const sourceY = Core.clamp(rect.y + Math.round(source.height * patch.sourceOffsetY / 100), 0, Math.max(0, source.height - rect.height));
 
     if (patch.mode === "solid") {
       context.fillStyle = patch.color;
       context.fillRect(0, 0, rect.width, rect.height);
     } else if (patch.mode === "smear") {
-      const sampleX = Math.min(snapshot.width - 1, Math.round(sourceX + rect.width / 2));
-      context.drawImage(snapshot, sampleX, sourceY, 1, rect.height, 0, 0, rect.width, rect.height);
+      const sampleX = Math.min(source.width - 1, Math.round(sourceX + rect.width / 2));
+      context.drawImage(source, sampleX, sourceY, 1, rect.height, 0, 0, rect.width, rect.height);
     } else if (patch.mode === "mosaic") {
       const small = createCanvas(Math.max(1, Math.ceil(rect.width / patch.blockSize)), Math.max(1, Math.ceil(rect.height / patch.blockSize)));
-      getContext(small, true).drawImage(snapshot, sourceX, sourceY, rect.width, rect.height, 0, 0, small.width, small.height);
+      getContext(small, true).drawImage(source, sourceX, sourceY, rect.width, rect.height, 0, 0, small.width, small.height);
       context.imageSmoothingEnabled = false;
       context.drawImage(small, 0, 0, small.width, small.height, 0, 0, rect.width, rect.height);
       small.width = 1;
       small.height = 1;
     } else if (patch.mode === "blur") {
       if ("filter" in context) context.filter = `blur(${Math.max(0.5, patch.blurRadius)}px)`;
-      context.drawImage(snapshot, sourceX, sourceY, rect.width, rect.height, 0, 0, rect.width, rect.height);
+      context.drawImage(source, sourceX, sourceY, rect.width, rect.height, 0, 0, rect.width, rect.height);
       if ("filter" in context) context.filter = "none";
     } else if (patch.mode === "mirror-x" || patch.mode === "mirror-y") {
       context.save();
       context.translate(patch.mode === "mirror-x" ? rect.width : 0, patch.mode === "mirror-y" ? rect.height : 0);
       context.scale(patch.mode === "mirror-x" ? -1 : 1, patch.mode === "mirror-y" ? -1 : 1);
-      context.drawImage(snapshot, sourceX, sourceY, rect.width, rect.height, 0, 0, rect.width, rect.height);
+      context.drawImage(source, sourceX, sourceY, rect.width, rect.height, 0, 0, rect.width, rect.height);
       context.restore();
     } else {
-      context.drawImage(snapshot, sourceX, sourceY, rect.width, rect.height, 0, 0, rect.width, rect.height);
+      context.drawImage(source, sourceX, sourceY, rect.width, rect.height, 0, 0, rect.width, rect.height);
     }
     return temp;
   }
 
-  function applyPatches(source, patches) {
-    const canvas = copyCanvas(source);
+  function applyPatches(source, patches, options) {
+    const canvas = options && options.inPlace ? source : copyCanvas(source);
     const context = getContext(canvas, true);
     for (const patch of Core.normalizePatches(patches)) {
       const rect = rectFromPercent(patch, canvas.width, canvas.height);
@@ -80,14 +80,11 @@
         context.restore();
         continue;
       }
-      const snapshot = copyCanvas(canvas);
-      const temp = createPatchCanvas(snapshot, patch, rect);
+      const temp = createPatchCanvas(canvas, patch, rect);
       context.save();
       context.globalAlpha = patch.opacity;
       context.drawImage(temp, rect.x, rect.y);
       context.restore();
-      snapshot.width = 1;
-      snapshot.height = 1;
       temp.width = 1;
       temp.height = 1;
     }
@@ -102,10 +99,7 @@
       blockSize: Math.max(2, Math.round(patch.blockSize * scale)),
       blurRadius: Math.max(0.5, patch.blurRadius * scale)
     }));
-    const patched = applyPatches(canvas, scaled);
-    canvas.width = 1;
-    canvas.height = 1;
-    return patched;
+    return applyPatches(canvas, scaled, { inPlace: true });
   }
 
   function drawOverlay(context, item, width, height, strokeStyle, fillStyle, label) {
